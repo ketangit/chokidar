@@ -5,6 +5,8 @@
 #include <signal.h>
 #include <mqtt_client.h>
 
+#define STATUS_TIME         60000  // 1 minute
+
 #define MCP23017_DEVICE1    0x20
 #define MCP23017_DEVICE2    0x21
 #define MCP23017_IODIRA     0x00
@@ -33,6 +35,7 @@ int main(void) {
     setup();
     loop();
     printf("Terminating ...\n");
+    sendMessage("SENSOR/CHOKIDAR/STATUS","DISCONNECT");
     mqttClient->disconnect();
     mqttClient = 0;
 }
@@ -73,8 +76,13 @@ void setup() {
 void loop() {
     char szBuffer[50];
     char szTmp[20];
+    unsigned long last_time=0; 
     while (keepRunning == 1) {
         mqttClient->loop();
+	if(millis() - last_time > STATUS_TIME) {
+		last_time = millis();
+		sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
+	}
         int val = 0;
         strcpy(szBuffer, "");
         val = wiringPiI2CReadReg8(fd1, MCP23017_GPIOA);

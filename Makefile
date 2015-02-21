@@ -14,3 +14,6 @@ chokidar: $(OBJ)
 
 clean:
 	rm -rf *o chokidar
+
+install:
+	cp chokidar ~/bin/.
