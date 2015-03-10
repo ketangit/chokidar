@@ -89,7 +89,7 @@ void loop() {
         if (valuePortA1 != val) {
             valuePortA1 = val;
             getPinNumber(valuePortA1);
-            sprintf(szTmp, " A1=%d,%s", valuePortA1, szPinNumber);
+            sprintf(szTmp, " C1=%d%s", valuePortA1, szPinNumber);
             strcat(szBuffer, szTmp);
         }
         delay(50);
@@ -97,7 +97,7 @@ void loop() {
         if (valuePortB1 != val) {
             valuePortB1 = val;
             getPinNumber(valuePortB1);
-            sprintf(szTmp, " B1=%d,%s", valuePortB1, szPinNumber);
+            sprintf(szTmp, " C2=%d%s", valuePortB1, szPinNumber);
             strcat(szBuffer, szTmp);
         }
         delay(50);
@@ -106,7 +106,7 @@ void loop() {
         if(valuePortA2 != val) {
             valuePortA2 = val;
             getPinNumber(valuePortA2);
-            sprintf(szTmp, " A2=%d,%s", valuePortA2, szPinNumber);
+            sprintf(szTmp, " C3=%d%s", valuePortA2, szPinNumber);
             strcat(szBuffer, szTmp);
         }
         delay(50);
@@ -114,8 +114,14 @@ void loop() {
         if(valuePortB2 != val) {
             valuePortB2 = val;
             getPinNumber(valuePortB2);
-            sprintf(szTmp, " B2=%d,%s", valuePortB2, szPinNumber);
+            sprintf(szTmp, " C4=%d%s", valuePortB2, szPinNumber);
             strcat(szBuffer, szTmp);
+            if( (valuePortB2 & 0b10000000) == 0 ||
+                (valuePortB2 & 0b01000000) == 0 ||
+                (valuePortB2 & 0b00100000) == 0 ||
+                (valuePortB2 & 0b00010000) == 0 ) {
+                    sendMessage("SENSOR/ALERT","AMBER");
+                }
         }
         delay(50);
 
@@ -132,14 +138,18 @@ void ctrlCHandler(int dummy) {
 
 void getPinNumber(int portValue) {
     strcpy(szPinNumber, "");
-    if( (portValue & 0b10000000) == 0) strcat(szPinNumber, " 7");
-    if( (portValue & 0b01000000) == 0) strcat(szPinNumber, " 6");
-    if( (portValue & 0b00100000) == 0) strcat(szPinNumber, " 5");
-    if( (portValue & 0b00010000) == 0) strcat(szPinNumber, " 4");
-    if( (portValue & 0b00001000) == 0) strcat(szPinNumber, " 3");
-    if( (portValue & 0b00000100) == 0) strcat(szPinNumber, " 2");
-    if( (portValue & 0b00000010) == 0) strcat(szPinNumber, " 1");
-    if( (portValue & 0b00000001) == 0) strcat(szPinNumber, " 0");
+    if( (portValue & 0b10000000) == 0) strcat(szPinNumber, "-7");
+    if( (portValue & 0b01000000) == 0) strcat(szPinNumber, "-6");
+    if( (portValue & 0b00100000) == 0) strcat(szPinNumber, "-5");
+    if( (portValue & 0b00010000) == 0) strcat(szPinNumber, "-4");
+    if( (portValue & 0b00001000) == 0) strcat(szPinNumber, "-3");
+    if( (portValue & 0b00000100) == 0) strcat(szPinNumber, "-2");
+    if( (portValue & 0b00000010) == 0) strcat(szPinNumber, "-1");
+    if( (portValue & 0b00000001) == 0) strcat(szPinNumber, "-0");
+
+    if(strlen(szPinNumber) > 1) {
+    	szPinNumber[0] = '=';
+    }
 }
 
 // send MQTT message

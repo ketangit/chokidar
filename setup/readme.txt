@@ -37,3 +37,9 @@ sudo cp /tmp/node-red /etc/init.d/.
 sudo chmod +x /etc/init.d/node-red
 sudo update-rc.d node-red defaults
 
+
+git commands
+============
+git commit -am "updated logic"
+git push
+
