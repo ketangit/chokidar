@@ -50,26 +50,33 @@ void setup() {
     }
     sendMessage("SENSOR/CHOKIDAR/STATUS","STARTED");
 
+    // Initialize wiringPi using wiringPi pins
     wiringPiSetup();
+
+    for(int pin=0;pin<8;pin++) {
+        pinMode(pin, OUTPUT);
+        pullUpDnControl(pin, PUD_UP); // Enable pull-up resistor
+        digitalWrite(pin, HIGH);
+    }
 
     fd1 = wiringPiI2CSetup(MCP23017_DEVICE1);
     if(fd1 < 0) {
         fprintf(stderr, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE1);
     } else {
-        wiringPiI2CWriteReg8(fd1, MCP23017_IODIRA, 0b11111111);
-        wiringPiI2CWriteReg8(fd1, MCP23017_GPPUA,  0b11111111);
-        wiringPiI2CWriteReg8(fd1, MCP23017_IODIRB, 0b11111111);
-        wiringPiI2CWriteReg8(fd1, MCP23017_GPPUB,  0b11111111);
+        wiringPiI2CWriteReg8(fd1, MCP23017_IODIRA, 0b11111111);  // all input
+        wiringPiI2CWriteReg8(fd1, MCP23017_GPPUA,  0b11111111);  // all pull-up
+        wiringPiI2CWriteReg8(fd1, MCP23017_IODIRB, 0b11111111);  // all input
+        wiringPiI2CWriteReg8(fd1, MCP23017_GPPUB,  0b11111111);  // all pull-up
     }
 
     fd2 = wiringPiI2CSetup(MCP23017_DEVICE2);
     if(fd2 < 0) {
         fprintf(stderr, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE2);
     } else {
-        wiringPiI2CWriteReg8(fd2, MCP23017_IODIRA, 0b11111111);
-        wiringPiI2CWriteReg8(fd2, MCP23017_GPPUA,  0b11111111);
-        wiringPiI2CWriteReg8(fd2, MCP23017_IODIRB, 0b11111111);
-        wiringPiI2CWriteReg8(fd2, MCP23017_GPPUB,  0b11111111);
+        wiringPiI2CWriteReg8(fd2, MCP23017_IODIRA, 0b11111111);  // all input
+        wiringPiI2CWriteReg8(fd2, MCP23017_GPPUA,  0b11111111);  // all pull-up
+        wiringPiI2CWriteReg8(fd2, MCP23017_IODIRB, 0b11111111);  // all input
+        wiringPiI2CWriteReg8(fd2, MCP23017_GPPUB,  0b11111111);  // all pull-up
     }
 }
 
@@ -80,8 +87,8 @@ void loop() {
     while (keepRunning == 1) {
         mqttClient->loop();
 	if(millis() - last_time > STATUS_TIME) {
-		last_time = millis();
-		sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
+	    last_time = millis();
+	    sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
 	}
         int val = 0;
         strcpy(szBuffer, "");
@@ -108,6 +115,12 @@ void loop() {
             getPinNumber(valuePortA2);
             sprintf(szTmp, " C3=%d%s", valuePortA2, szPinNumber);
             strcat(szBuffer, szTmp);
+            if( (valuePortA2 & 0b10000000) == 1 ||
+                (valuePortA2 & 0b01000000) == 1 ||
+                (valuePortA2 & 0b00100000) == 1 ||
+                (valuePortA2 & 0b00010000) == 1 ) {
+                    sendMessage("SENSOR/ALERT","AMBER");
+                }
         }
         delay(50);
         val = wiringPiI2CReadReg8(fd2, MCP23017_GPIOB);
@@ -116,12 +129,6 @@ void loop() {
             getPinNumber(valuePortB2);
             sprintf(szTmp, " C4=%d%s", valuePortB2, szPinNumber);
             strcat(szBuffer, szTmp);
-            if( (valuePortB2 & 0b10000000) == 0 ||
-                (valuePortB2 & 0b01000000) == 0 ||
-                (valuePortB2 & 0b00100000) == 0 ||
-                (valuePortB2 & 0b00010000) == 0 ) {
-                    sendMessage("SENSOR/ALERT","AMBER");
-                }
         }
         delay(50);
 
@@ -138,14 +145,14 @@ void ctrlCHandler(int dummy) {
 
 void getPinNumber(int portValue) {
     strcpy(szPinNumber, "");
-    if( (portValue & 0b10000000) == 0) strcat(szPinNumber, "-7");
-    if( (portValue & 0b01000000) == 0) strcat(szPinNumber, "-6");
-    if( (portValue & 0b00100000) == 0) strcat(szPinNumber, "-5");
-    if( (portValue & 0b00010000) == 0) strcat(szPinNumber, "-4");
-    if( (portValue & 0b00001000) == 0) strcat(szPinNumber, "-3");
-    if( (portValue & 0b00000100) == 0) strcat(szPinNumber, "-2");
-    if( (portValue & 0b00000010) == 0) strcat(szPinNumber, "-1");
-    if( (portValue & 0b00000001) == 0) strcat(szPinNumber, "-0");
+    if( (portValue & 0b10000000) == 1) strcat(szPinNumber, "-7");
+    if( (portValue & 0b01000000) == 1) strcat(szPinNumber, "-6");
+    if( (portValue & 0b00100000) == 1) strcat(szPinNumber, "-5");
+    if( (portValue & 0b00010000) == 1) strcat(szPinNumber, "-4");
+    if( (portValue & 0b00001000) == 1) strcat(szPinNumber, "-3");
+    if( (portValue & 0b00000100) == 1) strcat(szPinNumber, "-2");
+    if( (portValue & 0b00000010) == 1) strcat(szPinNumber, "-1");
+    if( (portValue & 0b00000001) == 1) strcat(szPinNumber, "-0");
 
     if(strlen(szPinNumber) > 1) {
     	szPinNumber[0] = '=';
@@ -167,3 +174,4 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
 
     printf(" rx: Topic=%s, Message=%s\n", topic, message);
 }
+
