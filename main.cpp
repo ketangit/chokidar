@@ -31,10 +31,10 @@ void sendMessage(const char*, const char*);
 void recieveMessage(char*, char*, unsigned int);
 
 int main(void) {
-    printf("Starting up ...\n");
+    //printf("Starting up ...\n");
     setup();
     loop();
-    printf("Terminating ...\n");
+    //printf("Terminating ...\n");
     sendMessage("SENSOR/CHOKIDAR/STATUS","DISCONNECT");
     mqttClient->disconnect();
     mqttClient = 0;
@@ -108,17 +108,16 @@ void loop() {
             strcat(szBuffer, szTmp);
         }
         delay(50);
-
         val = wiringPiI2CReadReg8(fd2, MCP23017_GPIOA);
         if(valuePortA2 != val) {
             valuePortA2 = val;
             getPinNumber(valuePortA2);
             sprintf(szTmp, " C3=%d%s", valuePortA2, szPinNumber);
             strcat(szBuffer, szTmp);
-            if( (valuePortA2 & 0b10000000) == 1 ||
-                (valuePortA2 & 0b01000000) == 1 ||
-                (valuePortA2 & 0b00100000) == 1 ||
-                (valuePortA2 & 0b00010000) == 1 ) {
+            if( (valuePortA2 ^ 0b10000000) == 0 ||
+                (valuePortA2 ^ 0b01000000) == 0 ||
+                (valuePortA2 ^ 0b00100000) == 0 ||
+                (valuePortA2 ^ 0b00010000) == 0 ) {
                     sendMessage("SENSOR/ALERT","AMBER");
                 }
         }
@@ -133,7 +132,7 @@ void loop() {
         delay(50);
 
         if(strlen(szBuffer) != 0) {
-            printf(" tx: %s\n", szBuffer);
+            //printf(" tx: %s\n", szBuffer);
             sendMessage("SENSOR/CHOKIDAR/PORTS",szBuffer);
         }
     }
@@ -145,15 +144,14 @@ void ctrlCHandler(int dummy) {
 
 void getPinNumber(int portValue) {
     strcpy(szPinNumber, "");
-    if( (portValue & 0b10000000) == 1) strcat(szPinNumber, "-7");
-    if( (portValue & 0b01000000) == 1) strcat(szPinNumber, "-6");
-    if( (portValue & 0b00100000) == 1) strcat(szPinNumber, "-5");
-    if( (portValue & 0b00010000) == 1) strcat(szPinNumber, "-4");
-    if( (portValue & 0b00001000) == 1) strcat(szPinNumber, "-3");
-    if( (portValue & 0b00000100) == 1) strcat(szPinNumber, "-2");
-    if( (portValue & 0b00000010) == 1) strcat(szPinNumber, "-1");
-    if( (portValue & 0b00000001) == 1) strcat(szPinNumber, "-0");
-
+    if( (portValue ^ 0b10000000) == 0) strcat(szPinNumber, "-7");
+    if( (portValue ^ 0b01000000) == 0) strcat(szPinNumber, "-6");
+    if( (portValue ^ 0b00100000) == 0) strcat(szPinNumber, "-5");
+    if( (portValue ^ 0b00010000) == 0) strcat(szPinNumber, "-4");
+    if( (portValue ^ 0b00001000) == 0) strcat(szPinNumber, "-3");
+    if( (portValue ^ 0b00000100) == 0) strcat(szPinNumber, "-2");
+    if( (portValue ^ 0b00000010) == 0) strcat(szPinNumber, "-1");
+    if( (portValue ^ 0b00000001) == 0) strcat(szPinNumber, "-0");
     if(strlen(szPinNumber) > 1) {
     	szPinNumber[0] = '=';
     }
@@ -171,7 +169,6 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
     char* message = new char[length + 1];
     memset(message, 0, length + 1);
     memcpy(message, payload, length);
-
-    printf(" rx: Topic=%s, Message=%s\n", topic, message);
+    //printf(" rx: Topic=%s, Message=%s\n", topic, message);
 }
 
