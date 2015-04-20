@@ -7,7 +7,7 @@
  * Internal callback for processing incoming messages.
  * It calls more friendly callback supplied by user.
  */
-static void callbackMessageReceived(void * context, const struct mosquitto_message * message) {
+static void callbackMessageReceived(struct mosquitto *mosq, void * context, const struct mosquitto_message * message) {
     MQTTClient * _this = (MQTTClient *)context;
 
     if (_this->onMessage != 0) {
@@ -22,7 +22,7 @@ static void callbackMessageReceived(void * context, const struct mosquitto_messa
  * Internal callback for processing disconnect.
  * We reset authenticated flag to force restore server connection next time.
  */
-static void callbackDisconnected(void * context) {
+static void callbackDisconnected(struct mosquitto *mosq, void * context, int reason) {
     MQTTClient * _this = (MQTTClient *)context;
     _this->resetConnectedState();
 }
@@ -30,7 +30,7 @@ static void callbackDisconnected(void * context) {
 MQTTClient::MQTTClient(const char* userName, const char* deviceId, const char* devicePassword, const char* serverName, int serverPort, void (*onMessage)(char*,char*,unsigned int)) {
     mosquitto_lib_init();
 
-    this->_data = mosquitto_new(deviceId, this);
+    this->_data = mosquitto_new(deviceId, true, this);
 
     this->_userName = userName;
     this->_devicePassword = devicePassword;
@@ -65,7 +65,7 @@ bool MQTTClient::connectIfNecessary() {
     // Call it before mosquitto_connect to supply additional user credentials.
     mosquitto_username_pw_set(this->_data, this->_userName, this->_devicePassword);
 
-    int result = mosquitto_connect(this->_data, this->_serverName, this->_serverPort, 60, false);
+    int result = mosquitto_connect(this->_data, this->_serverName, this->_serverPort, 60);
     this->_authenticatedInServer = result == MOSQ_ERR_SUCCESS;
     return this->_authenticatedInServer;
 }
@@ -86,7 +86,7 @@ bool MQTTClient::publish(const char* topic, const char* payload) {
     if (!this->connectIfNecessary()) {
         return false;
     }
-    int result = mosquitto_publish(this->_data, 0, topic, strlen(payload), (const uint8_t*)payload, 0, false);
+    int result = mosquitto_publish(this->_data, 0, topic, strlen(payload), payload, 0, false);
     return result == MOSQ_ERR_SUCCESS;
 }
 
@@ -108,7 +108,7 @@ bool MQTTClient::subscribe(const char* topic) {
  */
 bool MQTTClient::loop() {
     // We use -1 for default 1000ms waiting for network activity.
-    int result = mosquitto_loop(this->_data, -1);
+    int result = mosquitto_loop(this->_data, -1, 1);
     return result == MOSQ_ERR_SUCCESS;
 }
 
