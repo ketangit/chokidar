@@ -20,6 +20,15 @@ sudo vi /etc/mosquitto/mosquitto.conf
   pid_file /var/run/mosquitto.pid
   user pi
 
+  port 1883
+  protocol mqtt
+
+  listener 9001 127.0.0.1
+  protocol websockets
+
+  listener 9009 127.0.0.1
+  protocol websockets
+  
 Config init.d script for choki-dar
 ==================================
 sudo touch /var/log/choki-dar.log

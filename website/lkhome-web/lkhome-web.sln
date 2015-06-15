@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "lkhome-web", "lkhome-web\lkhome-web.njsproj", "{EAC2964C-B287-4949-A081-AD8CF7C21B77}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EAC2964C-B287-4949-A081-AD8CF7C21B77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAC2964C-B287-4949-A081-AD8CF7C21B77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAC2964C-B287-4949-A081-AD8CF7C21B77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAC2964C-B287-4949-A081-AD8CF7C21B77}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
