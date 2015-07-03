@@ -4,6 +4,8 @@
 #include <wiringPiI2C.h>
 #include <signal.h>
 #include <mqtt_client.h>
+#include <kompex/KompexSQLiteDatabase.h>
+#include <kompex/KompexSQLiteStatement.h>
 
 #define STATUS_TIME         60000  // 1 minute
 
@@ -30,6 +32,9 @@ MQTTClient *mqttClient = 0;
 void sendMessage(const char*, const char*);
 void recieveMessage(char*, char*, unsigned int);
 
+Kompex::SQLiteDatabase *pDatabase = 0;
+Kompex::SQLiteStatement *pStmt = 0;
+
 int main(void) {
     //printf("Starting up ...\n");
     setup();
@@ -38,10 +43,18 @@ int main(void) {
     sendMessage("SENSOR/CHOKIDAR/STATUS","DISCONNECT");
     mqttClient->disconnect();
     mqttClient = 0;
+    pStmt = 0;
+    pDatabase->Close();
+    pDatabase = 0;
 }
 
 void setup() {
     signal(SIGINT, ctrlCHandler);
+
+    // Create SQLite database connection
+    pDatabase = new Kompex::SQLiteDatabase("data.db", SQLITE_OPEN_READWRITE, 0);
+    // Create statement instance for sql queries/statements
+    pStmt = new Kompex::SQLiteStatement(pDatabase);
 
     // Create MQTT client for publish/subscribe messages
     mqttClient = new MQTTClient("", "CHOKIDAR", "", "127.0.0.1", 1883, recieveMessage);

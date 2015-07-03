@@ -1,5 +1,5 @@
 CC = g++
-LIBS = -lwiringPi -lmosquitto
+LIBS = -ldl -lwiringPi -lmosquitto -lkompex-sqlite-wrapper
 CFLAGS = -I.
 DEPS = mqtt_client.h
 OBJ = main.o mqtt_client.o
