@@ -1,22 +1,25 @@
 #include "main.h"
 
-int fd1 = 0, fd2 = 0;
-int valuePortA1 = 0, valuePortB1 = 0, valuePortA2 = 0, valuePortB2 = 0;
-int keepRunning = 1;
-char szPinNumber[20];
+//int fd1 = 0, fd2 = 0;
+//int valuePortA1 = 0, valuePortB1 = 0, valuePortA2 = 0, valuePortB2 = 0;
+//int keepRunning = 1;
+//char szPinNumber[20];
 
 void setup();
 void loop();
-void getPinNumber(int signo);
+//void getPinNumber(int signo);
 void sendMessage(const char* topic, const char* message);
 void recieveMessage(char* topic, char* payload, unsigned int length);    
 void pingMQTTMessage();
+void callbackPort(bool state, uint8_t pin, char *portName);
 void signalHandler(int);
 
 Timer *pTimer = 0;
-MQTTClient *mqttClient = 0;
+MQTTClient *pMQTTClient = 0;
 Kompex::SQLiteDatabase *pDatabase = 0;
 Kompex::SQLiteStatement *pStmt = 0;
+I2CPortDebounce *pDevice1 = 0;
+I2CPortDebounce *pDevice2 = 0;
 
 int main(void) {
     setup();
@@ -43,11 +46,11 @@ void setup() {
     pStmt = new Kompex::SQLiteStatement(pDatabase);
 
     // Create MQTT client for publish/subscribe messages
-    mqttClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
-    if(!mqttClient->subscribe("SENSOR/CHOKIDAR/COMMAND/#")) {
+    pMQTTClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
+    if(!pMQTTClient->subscribe("SENSOR/CHOKIDAR/COMMAND/#")) {
         syslog(LOG_CRIT, "Error: subscribing MQTT messages\n");
     }
-    sendMessage("SENSOR/CHOKIDAR/STATUS","STARTED");
+    sendMessage("SENSOR/CHOKIDAR/STATUS", "STARTED");
 
     // Initialize wiringPi using wiringPi pins
     wiringPiSetup();
@@ -58,6 +61,11 @@ void setup() {
         digitalWrite(pin, HIGH);
     }
 
+    // Initialize I2C device input ports  
+    pDevice1 = new I2CPortDebounce(MCP23017_DEVICE1, 'A', 'B', callbackPort);
+    pDevice2 = new I2CPortDebounce(MCP23017_DEVICE2, 'C', 'D', callbackPort);
+    
+    /*
     fd1 = wiringPiI2CSetup(MCP23017_DEVICE1);
     if(fd1 < 0) {
         syslog(LOG_CRIT, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE1);
@@ -77,18 +85,20 @@ void setup() {
         wiringPiI2CWriteReg8(fd2, MCP23017_IODIRB, 0b11111111);  // all input
         wiringPiI2CWriteReg8(fd2, MCP23017_GPPUB,  0b11111111);  // all pull-up
     }
-    
+    */
     pTimer = new Timer();
     pTimer->every(PING_TIME, pingMQTTMessage);
 }
 
 void loop() {
-    char szBuffer[50];
-    char szTmp[20];
-    while (keepRunning == 1) {
-        mqttClient->loop();
+    //char szBuffer[50];
+    //char szTmp[20];
+    while (1) {
+        pMQTTClient->loop();
         pTimer->update();
-
+        pDevice1->update();
+        pDevice2->update();
+/*
         int val = 0;
         strcpy(szBuffer, "");
         val = wiringPiI2CReadReg8(fd1, MCP23017_GPIOA);
@@ -133,9 +143,11 @@ void loop() {
         if(strlen(szBuffer) != 0) {
             sendMessage("SENSOR/CHOKIDAR/PORTS",szBuffer);
         }
+*/
     }
 }
 
+/*
 void getPinNumber(int portValue) {
     strcpy(szPinNumber, "");
     if( (portValue ^ 0b10000000) == 0) strcat(szPinNumber, "-7");
@@ -150,10 +162,11 @@ void getPinNumber(int portValue) {
     	szPinNumber[0] = '=';
     }
 }
+*/
 
 // send MQTT message
 void sendMessage(const char* topic, const char* message) {
-    if(!mqttClient->publish(topic,message)) {
+    if(!pMQTTClient->publish(topic,message)) {
         syslog(LOG_CRIT, "Error: publishing MQTT message %s\n", message);
     }
 }
@@ -167,7 +180,19 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
 }
 
 void pingMQTTMessage() {
-    sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
+    sendMessage("SENSOR/CHOKIDAR/STATUS", "ACTIVE");
+}
+
+void callbackPort(bool state, uint8_t pin, char *portName) {
+    sendMessage("SENSOR/ALERT", "AMBER");
+    /*
+	//printf("port=%s pin=%u state=%s\n", portName, pin, (state ? "H" : "L"));
+	if (strncmp(portName, "A", 1) == 0) {
+		//printf("port=%s pin=%u state=%s\n", portName, pin, (state ? "H" : "L"));
+		char payload[40];
+		sprintf_s(payload, "port=%s pin=%u state=%s", portName, pin, (state ? "H" : "L"));
+		//client.publish("TEST/MSG", payload);
+	}*/
 }
 
 // Signal handler to handle when the user tries to kill this process. Try to close down gracefully
@@ -175,13 +200,15 @@ void signalHandler(int signo) {
     syslog(LOG_INFO, "Received the signal to terminate the chokidar process. \n");
     syslog(LOG_INFO, "Trying to end the process gracefully. Closing the MQTT & local DB connection. \n");
     
-    sendMessage("SENSOR/CHOKIDAR/STATUS","DISCONNECT");
-    mqttClient->disconnect();
-    mqttClient = 0;
+    sendMessage("SENSOR/CHOKIDAR/STATUS", "DISCONNECT");
+    pMQTTClient->disconnect();
+    pMQTTClient = 0;
     pTimer = 0;
     pStmt = 0;
     pDatabase->Close();
     pDatabase = 0;
+    pDevice1 = 0;
+    pDevice2 = 0;
 
     syslog(LOG_INFO, "Shutdown of the chokidar process is complete. \n");
     syslog(LOG_INFO, "**** Chokidar has ended ****");

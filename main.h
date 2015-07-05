@@ -14,6 +14,7 @@
 
 #include "mqtt_client.h"
 #include "Timer.h"
+#include "I2CPortDebounce.h"
 
 //Logging level for the syslog
 //Default is INFO-6. Other possible values - ERROR-3, INFO-6, DEBUG-7
@@ -24,11 +25,5 @@
 
 #define MCP23017_DEVICE1    0x20
 #define MCP23017_DEVICE2    0x21
-#define MCP23017_IODIRA     0x00
-#define MCP23017_GPPUA      0x0C
-#define MCP23017_GPIOA      0x12
-#define MCP23017_IODIRB     0x01
-#define MCP23017_GPPUB      0x0D
-#define MCP23017_GPIOB      0x13
 
 #endif // MAIN_H
