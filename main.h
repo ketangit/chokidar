@@ -16,10 +16,10 @@
 
 //Logging level for the syslog
 //Default is INFO-6. Other possible values - ERROR-3, INFO-6, DEBUG-7
-#define LOGLEVEL 6
-#define MAC_STRING_LENGTH 13
+#define LOGLEVEL			6
+#define MAC_STRING_LENGTH	13
 
-#define STATUS_TIME         60000  // 1 minute
+#define PING_TIME         	60000  // 1 minute
 
 #define MCP23017_DEVICE1    0x20
 #define MCP23017_DEVICE2    0x21

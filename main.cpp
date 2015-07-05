@@ -10,8 +10,10 @@ void loop();
 void getPinNumber(int signo);
 void sendMessage(const char* topic, const char* message);
 void recieveMessage(char* topic, char* payload, unsigned int length);    
+void pingMQTTMessage(void *context);
 void signalHandler(int);
 
+Timer *timer = 0;
 MQTTClient *mqttClient = 0;
 Kompex::SQLiteDatabase *pDatabase = 0;
 Kompex::SQLiteStatement *pStmt = 0;
@@ -77,18 +79,21 @@ void setup() {
         wiringPiI2CWriteReg8(fd2, MCP23017_IODIRB, 0b11111111);  // all input
         wiringPiI2CWriteReg8(fd2, MCP23017_GPPUB,  0b11111111);  // all pull-up
     }
+    
+    timer = new Timer();
+    timer.every(PING_TIME, pingMQTTMessage, (void*)0);
 }
 
 void loop() {
     char szBuffer[50];
     char szTmp[20];
-    unsigned long last_time=0; 
+    //unsigned long last_time=0; 
     while (keepRunning == 1) {
         mqttClient->loop();
-        if(millis() - last_time > STATUS_TIME) {
+        /*if(millis() - last_time > STATUS_TIME) {
             last_time = millis();
             sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
-        }
+        }*/
         int val = 0;
         strcpy(szBuffer, "");
         val = wiringPiI2CReadReg8(fd1, MCP23017_GPIOA);
@@ -165,6 +170,10 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
     memset(message, 0, length + 1);
     memcpy(message, payload, length);
     //printf(" rx: Topic=%s, Message=%s\n", topic, message);
+}
+
+void pingMQTTMessage(void *context) {
+    sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
 }
 
 // Signal handler to handle when the user tries to kill this process. Try to close down gracefully
