@@ -1,5 +1,5 @@
-#ifndef DEBOUNCE_H
-#define DEBOUNCE_H
+#ifndef PORT_DEBOUNCE_H
+#define PORT_DEBOUNCE_H
 
 #include <inttypes.h>
 #include <wiringPi.h>
@@ -24,10 +24,10 @@
 //#define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 //#define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 
-class Debounce {
+class PortDebounce {
     
 public:
-    Debounce(char portName, void(*func)(bool, uint8_t, char *portName));
+    PortDebounce(char portName, void(*func)(bool, uint8_t, char *portName));
     void update(uint8_t value);
     
 private:
@@ -46,4 +46,4 @@ private:
     char portName;
 };
 
-#endif // DEBOUNCE_H
+#endif // PORT_DEBOUNCE_H

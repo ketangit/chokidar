@@ -1,6 +1,6 @@
-#include "Debounce.h"
+#include "PortDebounce.h"
 
-Debounce::Debounce(char portName, void(*func)(bool, uint8_t, char *portName)) {
+PortDebounce::PortDebounce(char portName, void(*func)(bool, uint8_t, char *portName)) {
 	this->configuredSwitchesNum = 0;
 	this->bounceDelay = DEBOUNCE_DEFAULT_DELAY;
 	this->portName = portName;
@@ -11,21 +11,21 @@ Debounce::Debounce(char portName, void(*func)(bool, uint8_t, char *portName)) {
 		info->state = false;		// initial state of pin is LOW by default  digitalRead(pin);
 		info->transientState = info->state;
 		info->lastChangeTime = 0;
-		info->settings = settings;
+		info->settings = DEBOUNCE_SETTING_NORMAL;
 		this->configuredSwitchesNum++;
 	}	
 }
 
-void Debounce::update(uint8_t value) {
+void PortDebounce::update(uint8_t value) {
 	uint8_t measuredState;
 	uint8_t reportedState;
 	switch_info_t *info;
-	unsigned long currentTime = millis();		//FIXME
+	unsigned long currentTime = millis();
 	unsigned long deltaTime;
 
 	for (uint8_t i = 0; i < this->configuredSwitchesNum; i++) {
 		info = &this->switches[i];
-		measuredState = bitRead(value, info->pin);		// digitalRead(info->pin);	//FIXME
+		measuredState = bitRead(value, info->pin);		// digitalRead(info->pin);
 		if (!(info->settings & DEBOUNCE_SETTINGS_FAST_CALLBACK) && measuredState != info->transientState) {
 			info->transientState = measuredState;
 			info->lastChangeTime = currentTime;
