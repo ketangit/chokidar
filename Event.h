@@ -2,6 +2,7 @@
 #define EVENT_H
 
 #include <inttypes.h>
+#include <wiringPi.h>
 
 // Original Source: https://github.com/JChristensen/Timer
 
