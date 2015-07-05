@@ -9,6 +9,7 @@ void callbackPinHigh();
 void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber);
 void signalHandler(int);
 
+char szBuffer[100];
 Timer *pTimer = 0;
 MQTTClient *pMQTTClient = 0;
 I2CPortDebounce *pDevice1 = 0;
@@ -53,7 +54,7 @@ void setup() {
     pDevice1 = new I2CPortDebounce();
     pDevice1->init(MCP23017_DEVICE1, 1, 2, callbackPinStateChanged);
     pDevice2 = new I2CPortDebounce();
-    pDevice2->init(MCP23017_DEVICE2, 3, -4, callbackPinStateChanged);  // port4 is disabled
+    pDevice2->init(MCP23017_DEVICE2, 3, 0, callbackPinStateChanged);  // port-B is disabled
     
     pTimer = new Timer();
     pTimer->every(PING_TIME, callbackDeviceStatus);
@@ -99,7 +100,9 @@ void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber) {
     if(portNumber < 4 && state == true) {
         sendMessage("SENSOR/ALERT", "AMBER");
     }
-    //sendMessage("SENSOR/CHOKIDAR/PORTS",szBuffer);
+    time_t t = time(NULL);
+    sprintf(szBuffer, "{\"a\":{\"port\":\"%u\",\"pin\":\"%u\",\"state\":\"%s\",\"datetime\":\"%ld\"}}", portNumber, pin, (state ? "H" : "L"), t);
+    sendMessage("SENSOR/CHOKIDAR/PORTS", szBuffer);
 }
 
 // Signal handler to handle when the user tries to kill this process. Try to close down gracefully

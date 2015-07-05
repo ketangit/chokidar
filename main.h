@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 #include <syslog.h>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
