@@ -49,6 +49,7 @@ sudo update-rc.d node-red defaults
 
 git commands
 ============
-git commit -am "updated logic"
+git commit -am "update comment"
 git push
-
+git status
+git pull

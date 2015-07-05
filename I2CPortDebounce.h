@@ -2,7 +2,9 @@
 #define I2C_PORT_DEBOUNCE_H
 
 #include <inttypes.h>
+#include <syslog.h>
 #include <wiringPi.h>
+#include <wiringPiI2C.h>
 #include "PortDebounce.h"
 
 #define MCP23017_IODIRA     0x00

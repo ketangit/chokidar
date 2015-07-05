@@ -8,7 +8,7 @@ I2CPortDebounce::I2CPortDebounce() {
 }
 
 void I2CPortDebounce::init(int devId, char portNameA, char portNameB, void(*func)(bool, uint8_t, char *portName)) {
-	_fileHandle = wiringPiI2CSetup(devId);
+    _fileHandle = wiringPiI2CSetup(devId);
     if(_fileHandle < 0) {
         syslog(LOG_CRIT, "Error: unable to initialize MCP23017 I2C device at address %d", devId);
     } else {
@@ -25,12 +25,12 @@ void I2CPortDebounce::update(void) {
     int valA = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOA);
     if (_valuePortA != valA) {
         _valuePortA = valA;
-        _pDebouncePortA.update(_valuePortA);
+        _pDebouncePortA->update(_valuePortA);
     }
     
     int valB = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOB);
     if (_valuePortB != valB) {
         _valuePortB = valB;
-        _pDebouncePortB.update(_valuePortB);
+        _pDebouncePortB->update(_valuePortB);
     }
 }
