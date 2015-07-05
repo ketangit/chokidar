@@ -16,8 +16,6 @@ void signalHandler(int);
 
 Timer *pTimer = 0;
 MQTTClient *pMQTTClient = 0;
-Kompex::SQLiteDatabase *pDatabase = 0;
-Kompex::SQLiteStatement *pStmt = 0;
 I2CPortDebounce *pDevice1 = 0;
 I2CPortDebounce *pDevice2 = 0;
 
@@ -40,11 +38,6 @@ void setup() {
         syslog(LOG_CRIT, "Not able to register the signal handler\n");
     }    
 
-    // Create SQLite database connection
-    //pDatabase = new Kompex::SQLiteDatabase("data.db", SQLITE_OPEN_READWRITE, 0);
-    // Create statement instance for sql queries/statements
-    //pStmt = new Kompex::SQLiteStatement(pDatabase);
-
     // Create MQTT client for publish/subscribe messages
     pMQTTClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
     if(!pMQTTClient->subscribe("SENSOR/CHOKIDAR/COMMAND/#")) {
@@ -63,8 +56,8 @@ void setup() {
 
     // Initialize I2C device input ports  
     pDevice1 = new I2CPortDebounce();
-    pDevice1->init(MCP23017_DEVICE1, 'A', 'B', callbackPort);
     pDevice2 = new I2CPortDebounce();
+    pDevice1->init(MCP23017_DEVICE1, 'A', 'B', callbackPort);
     pDevice2->init(MCP23017_DEVICE2, 'C', 'D', callbackPort);
     
     /*
@@ -186,9 +179,9 @@ void pingMQTTMessage() {
 }
 
 void callbackPort(bool state, uint8_t pin, char *portName) {
+    syslog(LOG_INFO, "I2C ports changed: portName=%s, pinNumber=%u, state=%s\n", portName, pin, (state ? "H" : "L"));
     sendMessage("SENSOR/ALERT", "AMBER");
     /*
-	//printf("port=%s pin=%u state=%s\n", portName, pin, (state ? "H" : "L"));
 	if (strncmp(portName, "A", 1) == 0) {
 		//printf("port=%s pin=%u state=%s\n", portName, pin, (state ? "H" : "L"));
 		char payload[40];
@@ -206,9 +199,6 @@ void signalHandler(int signo) {
     pMQTTClient->disconnect();
     pMQTTClient = 0;
     pTimer = 0;
-    pStmt = 0;
-    //pDatabase->Close();
-    pDatabase = 0;
     pDevice1 = 0;
     pDevice2 = 0;
 
