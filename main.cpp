@@ -58,7 +58,7 @@ void setup() {
     
     pTimer = new Timer();
     pTimer->every(PING_TIME, callbackDeviceStatus);
-    pTimer->every(CHECK_PIN_TIME, callbackPinHigh);
+    //pTimer->every(CHECK_PIN_TIME, callbackPinHigh);
 }
 
 void loop() {
