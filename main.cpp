@@ -56,9 +56,9 @@ void setup() {
 
     // Initialize I2C device input ports  
     pDevice1 = new I2CPortDebounce();
-    pDevice1->init(MCP23017_DEVICE1, 'A', 'B', callbackPort);
+    pDevice1->init(MCP23017_DEVICE1, 1, 2, callbackPort);
     pDevice2 = new I2CPortDebounce();
-    pDevice2->init(MCP23017_DEVICE2, 'C', 'D', callbackPort);
+    pDevice2->init(MCP23017_DEVICE2, 3, 4, callbackPort);
     
     /*
     fd1 = wiringPiI2CSetup(MCP23017_DEVICE1);
@@ -178,8 +178,8 @@ void pingMQTTMessage() {
     sendMessage("SENSOR/CHOKIDAR/STATUS", "ACTIVE");
 }
 
-void callbackPort(bool state, uint8_t pin, char *portName) {
-    syslog(LOG_INFO, "I2C ports changed: portName=%s, pinNumber=%u, state=%s\n", portName, pin, (state ? "H" : "L"));
+void callbackPort(bool state, uint8_t pin, uint8_t portNumber) {
+    syslog(LOG_INFO, "I2C ports changed: port=%u, pin=%u, state=%s\n", portNumber, pin, (state ? "H" : "L"));
     sendMessage("SENSOR/ALERT", "AMBER");
     /*
 	if (strncmp(portName, "A", 1) == 0) {

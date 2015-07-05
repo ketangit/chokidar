@@ -27,13 +27,13 @@
 class PortDebounce {
     
 public:
-    PortDebounce(char portName, void(*func)(bool, uint8_t, char *portName));
+    PortDebounce(uint8_t portNumber, void(*func)(bool, uint8_t, uint8_t));
     void update(uint8_t value);
-    char* getPortName();
+    uint8_t getPortNumber();
 private:
     typedef struct config_struct {
         uint8_t pin;
-        void(*func)(bool, uint8_t, char*);
+        void(*func)(bool, uint8_t, uint8_t);
         uint8_t state;
         uint8_t transientState;
         unsigned long lastChangeTime;
@@ -43,7 +43,7 @@ private:
     switch_info_t switches[DEBOUNCE_MAX_CAPACITY];
     uint8_t configuredSwitchesNum;
     uint16_t bounceDelay;
-    char portName;
+    uint8_t portNumber;
 };
 
 #endif // PORT_DEBOUNCE_H

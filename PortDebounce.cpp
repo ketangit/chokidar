@@ -1,14 +1,14 @@
 #include "PortDebounce.h"
 
-PortDebounce::PortDebounce(char portName, void(*func)(bool, uint8_t, char *portName)) {
+PortDebounce::PortDebounce(uint8_t portNumber, void(*func)(bool, uint8_t, uint8_t)) {
 	this->configuredSwitchesNum = 0;
 	this->bounceDelay = DEBOUNCE_DEFAULT_DELAY;
-	this->portName = portName;
+	this->portNumber = portNumber;
 	for (uint8_t pin = 0; pin < DEBOUNCE_MAX_CAPACITY; pin++) {
 		switch_info_t *info = &this->switches[this->configuredSwitchesNum];
 		info->pin = pin;
 		info->func = func;
-		info->state = true;		// initial state of pin is HIGH by default  digitalRead(pin);
+		info->state = false;		// initial state of pin is LOW by default  digitalRead(pin);
 		info->transientState = info->state;
 		info->lastChangeTime = 0;
 		info->settings = DEBOUNCE_SETTING_NORMAL;
@@ -16,8 +16,8 @@ PortDebounce::PortDebounce(char portName, void(*func)(bool, uint8_t, char *portN
 	}	
 }
 
-char* PortDebounce::getPortName() {
-	return &this->portName;
+uint8_t PortDebounce::getPortNumber() {
+	return this->portNumber;
 }
 
 void PortDebounce::update(uint8_t value) {
@@ -47,13 +47,13 @@ void PortDebounce::update(uint8_t value) {
 				if (reportedState) {
 					//rising edge
 					if (!(info->settings & DEBOUNCE_SETTING_SKIP_RISING_EDGE)) {
-						info->func(reportedState, info->pin, &this->portName);
+						info->func(reportedState, info->pin, this->portNumber);
 					}
 				}
 				else {
 					//falling edge
 					if (!(info->settings & DEBOUNCE_SETTING_SKIP_FALLING_EDGE)) {
-						info->func(reportedState, info->pin, &this->portName);
+						info->func(reportedState, info->pin, this->portNumber);
 					}
 				}
 			}
