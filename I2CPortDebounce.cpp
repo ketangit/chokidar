@@ -26,17 +26,11 @@ void I2CPortDebounce::init(int devId, uint8_t portNumberA, uint8_t portNumberB, 
 }
 
 void I2CPortDebounce::update(void) {
-    int valA = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOA);
-    if (_valuePortA != valA) {
-        _valuePortA = valA;
-        _pDebouncePortA->update(_valuePortA);
-        syslog(LOG_INFO, "Received I2C deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortA->getPortNumber(), _valuePortA);
-    }
+    _valuePortA = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOA);
+    _pDebouncePortA->update(_valuePortA);
+    //syslog(LOG_INFO, "Received I2C deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortA->getPortNumber(), _valuePortA);
     
-    int valB = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOB);
-    if (_valuePortB != valB) {
-        _valuePortB = valB;
-        _pDebouncePortB->update(_valuePortB);
-        syslog(LOG_INFO, "Received I2C deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortB->getPortNumber(), _valuePortB);
-    }
+    _valuePortB = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOB);
+    _pDebouncePortB->update(_valuePortB);
+    //syslog(LOG_INFO, "Received I2C deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortB->getPortNumber(), _valuePortB);
 }
