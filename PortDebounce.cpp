@@ -8,7 +8,7 @@ PortDebounce::PortDebounce(char portName, void(*func)(bool, uint8_t, char *portN
 		switch_info_t *info = &this->switches[this->configuredSwitchesNum];
 		info->pin = pin;
 		info->func = func;
-		info->state = false;		// initial state of pin is LOW by default  digitalRead(pin);
+		info->state = true;		// initial state of pin is HIGH by default  digitalRead(pin);
 		info->transientState = info->state;
 		info->lastChangeTime = 0;
 		info->settings = DEBOUNCE_SETTING_NORMAL;

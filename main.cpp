@@ -56,8 +56,8 @@ void setup() {
 
     // Initialize I2C device input ports  
     pDevice1 = new I2CPortDebounce();
-    pDevice2 = new I2CPortDebounce();
     pDevice1->init(MCP23017_DEVICE1, 'A', 'B', callbackPort);
+    pDevice2 = new I2CPortDebounce();
     pDevice2->init(MCP23017_DEVICE2, 'C', 'D', callbackPort);
     
     /*
@@ -193,7 +193,7 @@ void callbackPort(bool state, uint8_t pin, char *portName) {
 // Signal handler to handle when the user tries to kill this process. Try to close down gracefully
 void signalHandler(int signo) {
     syslog(LOG_INFO, "Received the signal to terminate the chokidar process. \n");
-    syslog(LOG_INFO, "Trying to end the process gracefully. Closing the MQTT & local DB connection. \n");
+    syslog(LOG_INFO, "Trying to end the process gracefully. Closing the MQTT connection. \n");
     
     sendMessage("SENSOR/CHOKIDAR/STATUS", "DISCONNECT");
     pMQTTClient->disconnect();
