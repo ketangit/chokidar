@@ -29,7 +29,7 @@ class PortDebounce {
 public:
     PortDebounce(char portName, void(*func)(bool, uint8_t, char *portName));
     void update(uint8_t value);
-    char * getPortName();
+    char* getPortName();
 private:
     typedef struct config_struct {
         uint8_t pin;

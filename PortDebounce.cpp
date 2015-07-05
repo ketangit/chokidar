@@ -17,7 +17,7 @@ PortDebounce::PortDebounce(char portName, void(*func)(bool, uint8_t, char *portN
 }
 
 char* PortDebounce::getPortName() {
-	return this->portName;
+	return &this->portName;
 }
 
 void PortDebounce::update(uint8_t value) {

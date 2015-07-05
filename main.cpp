@@ -41,9 +41,9 @@ void setup() {
     }    
 
     // Create SQLite database connection
-    pDatabase = new Kompex::SQLiteDatabase("data.db", SQLITE_OPEN_READWRITE, 0);
+    //pDatabase = new Kompex::SQLiteDatabase("data.db", SQLITE_OPEN_READWRITE, 0);
     // Create statement instance for sql queries/statements
-    pStmt = new Kompex::SQLiteStatement(pDatabase);
+    //pStmt = new Kompex::SQLiteStatement(pDatabase);
 
     // Create MQTT client for publish/subscribe messages
     pMQTTClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
@@ -62,8 +62,10 @@ void setup() {
     }
 
     // Initialize I2C device input ports  
-    pDevice1 = new I2CPortDebounce(MCP23017_DEVICE1, 'A', 'B', callbackPort);
-    pDevice2 = new I2CPortDebounce(MCP23017_DEVICE2, 'C', 'D', callbackPort);
+    pDevice1 = new I2CPortDebounce();
+    pDevice1->init(MCP23017_DEVICE1, 'A', 'B', callbackPort);
+    pDevice2 = new I2CPortDebounce();
+    pDevice2->init(MCP23017_DEVICE2, 'C', 'D', callbackPort);
     
     /*
     fd1 = wiringPiI2CSetup(MCP23017_DEVICE1);
@@ -205,7 +207,7 @@ void signalHandler(int signo) {
     pMQTTClient = 0;
     pTimer = 0;
     pStmt = 0;
-    pDatabase->Close();
+    //pDatabase->Close();
     pDatabase = 0;
     pDevice1 = 0;
     pDevice2 = 0;
