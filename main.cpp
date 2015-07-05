@@ -4,10 +4,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <syslog.h>
-#include <netdb.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <linux/if.h>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include <mqtt_client.h>
@@ -41,7 +37,6 @@ void getPinNumber(int signo);
 void sendMessage(const char* topic, const char* message);
 void recieveMessage(char* topic, char* payload, unsigned int length);    
 void signalHandler(int);
-char *getmac(char *iface);
 
 MQTTClient *mqttClient = 0;
 Kompex::SQLiteDatabase *pDatabase = 0;
@@ -74,8 +69,7 @@ void setup() {
     pStmt = new Kompex::SQLiteStatement(pDatabase);
 
     // Create MQTT client for publish/subscribe messages
-    char* clientId = getmac("eth0");
-    mqttClient = new MQTTClient(clientId, "", "", "127.0.0.1", 1883, recieveMessage);
+    mqttClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
     if(!mqttClient->subscribe("SENSOR/CHOKIDAR/COMMAND/#")) {
         fprintf(stderr, "Error: subscribing MQTT messages");
     }
@@ -217,19 +211,3 @@ void signalHandler(int signo) {
     exit(1);
 }
 
-char* getmac(char *iface) {
-    char *ret = malloc(MAC_STRING_LENGTH);
-    struct ifreq s;
-    int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-    strcpy(s.ifr_name, iface);
-    if (fd >= 0 && ret && 0 == ioctl(fd, SIOCGIFHWADDR, &s)) {
-        int i;
-        for (i = 0; i < 6; ++i) {
-            snprintf(ret+i*2,MAC_STRING_LENGTH-i*2,"%02x",(unsigned char) s.ifr_addr.sa_data[i]);
-        }
-    } else {
-        perror("malloc/socket/ioctl failed");
-        exit(1);
-    }
-    return(ret);
-}

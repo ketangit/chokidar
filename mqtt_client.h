@@ -1,9 +1,12 @@
+#ifndef MQTT_CLIENT_H
+#define MQTT_CLIENT_H
+
 #include <mosquitto.h>
+#include <syslog.h>
 
 // Original Source: https://github.com/OpenSensorsIO/raspberry-pi-mqtt
 
-class MQTTClient
-{
+class MQTTClient {
 private:
     mosquitto* _data;
     const char* _userName;
@@ -28,3 +31,5 @@ public:
     void (*onDisconnect)(void*);
     void resetConnectedState();
 };
+
+#endif //MQTT_CLIENT_H
