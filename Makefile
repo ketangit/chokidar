@@ -1,7 +1,7 @@
 CC = g++
 LIBS = -ldl -lwiringPi -lmosquitto -lkompex-sqlite-wrapper
 CFLAGS = -I.
-DEPS = mqtt_client.h
+DEPS = mqtt_client.h Event.h Timer.h
 OBJ = main.o mqtt_client.o
 
 all: chokidar

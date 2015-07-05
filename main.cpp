@@ -210,4 +210,3 @@ void signalHandler(int signo) {
     closelog();
     exit(1);
 }
-
