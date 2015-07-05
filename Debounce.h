@@ -28,7 +28,7 @@ class Debounce {
     
 public:
     Debounce(char portName, void(*func)(bool, uint8_t, char *portName));
-    bool update(uint8_t value);
+    void update(uint8_t value);
     
 private:
     typedef struct config_struct {

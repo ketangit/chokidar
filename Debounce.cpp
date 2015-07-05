@@ -26,12 +26,10 @@ void Debounce::update(uint8_t value) {
 	for (uint8_t i = 0; i < this->configuredSwitchesNum; i++) {
 		info = &this->switches[i];
 		measuredState = bitRead(value, info->pin);		// digitalRead(info->pin);	//FIXME
-
 		if (!(info->settings & DEBOUNCE_SETTINGS_FAST_CALLBACK) && measuredState != info->transientState) {
 			info->transientState = measuredState;
 			info->lastChangeTime = currentTime;
 		}
-
 		if (measuredState != info->state) {
 			deltaTime = currentTime - info->lastChangeTime;
 			if (deltaTime > this->bounceDelay) {
