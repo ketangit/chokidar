@@ -21,6 +21,7 @@ public:
   void update(void);
   
   private:
+    int _deviceId;
     int _fileHandle;
     int _valuePortA;
     int _valuePortB;
