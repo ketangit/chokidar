@@ -11,7 +11,7 @@ void loop();
 void sendMessage(const char* topic, const char* message);
 void recieveMessage(char* topic, char* payload, unsigned int length);    
 void pingMQTTMessage();
-void callbackPort(bool state, uint8_t pin, char *portName);
+void callbackPort(bool state, uint8_t pin, uint8_t portNumber);
 void signalHandler(int);
 
 Timer *pTimer = 0;
