@@ -4,9 +4,9 @@ PortDebounce::PortDebounce(uint8_t portNumber, void(*func)(bool, uint8_t, uint8_
 	this->configuredSwitchesNum = 0;
 	this->bounceDelay = DEBOUNCE_DEFAULT_DELAY;
 	this->portNumber = portNumber;
-	for (uint8_t pin = 0; pin < DEBOUNCE_MAX_CAPACITY; pin++) {
+	for (uint8_t i = 0; i < DEBOUNCE_MAX_CAPACITY; i++) {
 		switch_info_t *info = &this->switches[this->configuredSwitchesNum];
-		info->pin = pin;
+		info->pin = i;
 		info->func = func;
 		info->state = false;		// initial state of pin is LOW by default  digitalRead(pin);
 		info->transientState = info->state;
@@ -18,6 +18,17 @@ PortDebounce::PortDebounce(uint8_t portNumber, void(*func)(bool, uint8_t, uint8_
 
 uint8_t PortDebounce::getPortNumber() {
 	return this->portNumber;
+}
+
+bool PortDebounce::isAnyPinHigh() {
+	switch_info_t *info;
+	for (uint8_t i = 0; i < DEBOUNCE_MAX_CAPACITY; i++) {
+		info = &this->switches[i];
+		if(info->state == true) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void PortDebounce::update(uint8_t value) {

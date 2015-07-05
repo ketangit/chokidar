@@ -1,17 +1,12 @@
 #include "main.h"
 
-//int fd1 = 0, fd2 = 0;
-//int valuePortA1 = 0, valuePortB1 = 0, valuePortA2 = 0, valuePortB2 = 0;
-//int keepRunning = 1;
-//char szPinNumber[20];
-
 void setup();
 void loop();
-//void getPinNumber(int signo);
 void sendMessage(const char* topic, const char* message);
 void recieveMessage(char* topic, char* payload, unsigned int length);    
-void pingMQTTMessage();
-void callbackPort(bool state, uint8_t pin, uint8_t portNumber);
+void callbackDeviceStatus();
+void callbackPinHigh();
+void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber);
 void signalHandler(int);
 
 Timer *pTimer = 0;
@@ -56,108 +51,23 @@ void setup() {
 
     // Initialize I2C device input ports  
     pDevice1 = new I2CPortDebounce();
-    pDevice1->init(MCP23017_DEVICE1, 1, 2, callbackPort);
+    pDevice1->init(MCP23017_DEVICE1, 1, 2, callbackPinStateChanged);
     pDevice2 = new I2CPortDebounce();
-    pDevice2->init(MCP23017_DEVICE2, 3, 4, callbackPort);
+    pDevice2->init(MCP23017_DEVICE2, 3, -4, callbackPinStateChanged);  // port4 is disabled
     
-    /*
-    fd1 = wiringPiI2CSetup(MCP23017_DEVICE1);
-    if(fd1 < 0) {
-        syslog(LOG_CRIT, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE1);
-    } else {
-        wiringPiI2CWriteReg8(fd1, MCP23017_IODIRA, 0b11111111);  // all input
-        wiringPiI2CWriteReg8(fd1, MCP23017_GPPUA,  0b11111111);  // all pull-up
-        wiringPiI2CWriteReg8(fd1, MCP23017_IODIRB, 0b11111111);  // all input
-        wiringPiI2CWriteReg8(fd1, MCP23017_GPPUB,  0b11111111);  // all pull-up
-    }
-
-    fd2 = wiringPiI2CSetup(MCP23017_DEVICE2);
-    if(fd2 < 0) {
-        syslog(LOG_CRIT, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE2);
-    } else {
-        wiringPiI2CWriteReg8(fd2, MCP23017_IODIRA, 0b11111111);  // all input
-        wiringPiI2CWriteReg8(fd2, MCP23017_GPPUA,  0b11111111);  // all pull-up
-        wiringPiI2CWriteReg8(fd2, MCP23017_IODIRB, 0b11111111);  // all input
-        wiringPiI2CWriteReg8(fd2, MCP23017_GPPUB,  0b11111111);  // all pull-up
-    }
-    */
     pTimer = new Timer();
-    pTimer->every(PING_TIME, pingMQTTMessage);
+    pTimer->every(PING_TIME, callbackDeviceStatus);
+    pTimer->every(CHECK_PIN_TIME, callbackPinHigh);
 }
 
 void loop() {
-    //char szBuffer[50];
-    //char szTmp[20];
     while (1) {
         pMQTTClient->loop();
         pTimer->update();
         pDevice1->update();
         pDevice2->update();
-/*
-        int val = 0;
-        strcpy(szBuffer, "");
-        val = wiringPiI2CReadReg8(fd1, MCP23017_GPIOA);
-        if (valuePortA1 != val) {
-            valuePortA1 = val;
-            getPinNumber(valuePortA1);
-            sprintf(szTmp, " C1=%d%s", valuePortA1, szPinNumber);
-            strcat(szBuffer, szTmp);
-        }
-        delay(50);
-        val = wiringPiI2CReadReg8(fd1, MCP23017_GPIOB);
-        if (valuePortB1 != val) {
-            valuePortB1 = val;
-            getPinNumber(valuePortB1);
-            sprintf(szTmp, " C2=%d%s", valuePortB1, szPinNumber);
-            strcat(szBuffer, szTmp);
-        }
-        delay(50);
-        val = wiringPiI2CReadReg8(fd2, MCP23017_GPIOA);
-        if(valuePortA2 != val) {
-            valuePortA2 = val;
-            getPinNumber(valuePortA2);
-            sprintf(szTmp, " C3=%d%s", valuePortA2, szPinNumber);
-            strcat(szBuffer, szTmp);
-            if( (valuePortA2 ^ 0b10000000) == 0 ||
-                (valuePortA2 ^ 0b01000000) == 0 ||
-                (valuePortA2 ^ 0b00100000) == 0 ||
-                (valuePortA2 ^ 0b00010000) == 0 ) {
-                    sendMessage("SENSOR/ALERT","AMBER");
-                }
-        }
-        delay(50);
-        val = wiringPiI2CReadReg8(fd2, MCP23017_GPIOB);
-        if(valuePortB2 != val) {
-            valuePortB2 = val;
-            getPinNumber(valuePortB2);
-            sprintf(szTmp, " C4=%d%s", valuePortB2, szPinNumber);
-            strcat(szBuffer, szTmp);
-        }
-        delay(50);
-
-        if(strlen(szBuffer) != 0) {
-            sendMessage("SENSOR/CHOKIDAR/PORTS",szBuffer);
-        }
-*/
     }
 }
-
-/*
-void getPinNumber(int portValue) {
-    strcpy(szPinNumber, "");
-    if( (portValue ^ 0b10000000) == 0) strcat(szPinNumber, "-7");
-    if( (portValue ^ 0b01000000) == 0) strcat(szPinNumber, "-6");
-    if( (portValue ^ 0b00100000) == 0) strcat(szPinNumber, "-5");
-    if( (portValue ^ 0b00010000) == 0) strcat(szPinNumber, "-4");
-    if( (portValue ^ 0b00001000) == 0) strcat(szPinNumber, "-3");
-    if( (portValue ^ 0b00000100) == 0) strcat(szPinNumber, "-2");
-    if( (portValue ^ 0b00000010) == 0) strcat(szPinNumber, "-1");
-    if( (portValue ^ 0b00000001) == 0) strcat(szPinNumber, "-0");
-    if(strlen(szPinNumber) > 1) {
-    	szPinNumber[0] = '=';
-    }
-}
-*/
 
 // send MQTT message
 void sendMessage(const char* topic, const char* message) {
@@ -174,20 +84,22 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
     syslog(LOG_INFO, "Recevied: Topic=%s, Message=%s\n", topic, message);
 }
 
-void pingMQTTMessage() {
+void callbackDeviceStatus() {
     sendMessage("SENSOR/CHOKIDAR/STATUS", "ACTIVE");
 }
 
-void callbackPort(bool state, uint8_t pin, uint8_t portNumber) {
+void callbackPinHigh() {
+    if(pDevice1->isAnyPinHigh() || pDevice2->isAnyPinHigh()) {
+        sendMessage("SENSOR/ALERT", "YELLOW");
+    }
+}
+
+void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber) {
     syslog(LOG_INFO, "I2C ports changed: port=%u, pin=%u, state=%s\n", portNumber, pin, (state ? "H" : "L"));
-    sendMessage("SENSOR/ALERT", "AMBER");
-    /*
-	if (strncmp(portName, "A", 1) == 0) {
-		//printf("port=%s pin=%u state=%s\n", portName, pin, (state ? "H" : "L"));
-		char payload[40];
-		sprintf_s(payload, "port=%s pin=%u state=%s", portName, pin, (state ? "H" : "L"));
-		//client.publish("TEST/MSG", payload);
-	}*/
+    if(portNumber < 4 && state == true) {
+        sendMessage("SENSOR/ALERT", "AMBER");
+    }
+    //sendMessage("SENSOR/CHOKIDAR/PORTS",szBuffer);
 }
 
 // Signal handler to handle when the user tries to kill this process. Try to close down gracefully

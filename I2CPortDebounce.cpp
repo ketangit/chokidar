@@ -14,23 +14,52 @@ void I2CPortDebounce::init(int devId, uint8_t portNumberA, uint8_t portNumberB, 
     if(_fileHandle < 0) {
         syslog(LOG_CRIT, "Error: unable to initialize MCP23017 I2C device at address %d", _deviceId);
     } else {
-        wiringPiI2CWriteReg8(_fileHandle, MCP23017_IODIRA, 0b11111111);  // all input
-        wiringPiI2CWriteReg8(_fileHandle, MCP23017_GPPUA,  0b11111111);  // all pull-up
-        wiringPiI2CWriteReg8(_fileHandle, MCP23017_IODIRB, 0b11111111);  // all input
-        wiringPiI2CWriteReg8(_fileHandle, MCP23017_GPPUB,  0b11111111);  // all pull-up
-        _pDebouncePortA = new PortDebounce(portNumberA, func);
-        _pDebouncePortB = new PortDebounce(portNumberB, func);
-        syslog(LOG_INFO, "Initialize I2C deviceId=%d, fileHandle=%d portNumbers=[%u,%u]\n", 
-            _deviceId, _fileHandle, _pDebouncePortA->getPortNumber(), _pDebouncePortB->getPortNumber());
+        if(portNumberA > 0) {
+            wiringPiI2CWriteReg8(_fileHandle, MCP23017_IODIRA, 0b11111111);  // all input
+            wiringPiI2CWriteReg8(_fileHandle, MCP23017_GPPUA,  0b11111111);  // all pull-up
+            _pDebouncePortA = new PortDebounce(portNumberA, func);
+            syslog(LOG_INFO, "Initialize I2C Port-A deviceId=%d, fileHandle=%d portNumber=%u\n",
+                _deviceId, _fileHandle, _pDebouncePortA->getPortNumber());
+        } else {
+            syslog(LOG_INFO, "Disabled I2C Port-A deviceId=%d, fileHandle=%d\n", _deviceId, _fileHandle);
+        }
+        if(portNumberB > 0) {
+            wiringPiI2CWriteReg8(_fileHandle, MCP23017_IODIRB, 0b11111111);  // all input
+            wiringPiI2CWriteReg8(_fileHandle, MCP23017_GPPUB,  0b11111111);  // all pull-up
+            _pDebouncePortB = new PortDebounce(portNumberB, func);
+            syslog(LOG_INFO, "Initialize I2C Port-B deviceId=%d, fileHandle=%d portNumber=%u\n",
+                _deviceId, _fileHandle, _pDebouncePortB->getPortNumber());
+        } else {
+            syslog(LOG_INFO, "Disabled I2C Port-B deviceId=%d, fileHandle=%d\n", _deviceId, _fileHandle);
+        }
     }	
 }
 
 void I2CPortDebounce::update(void) {
-    _valuePortA = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOA);
-    _pDebouncePortA->update(_valuePortA);
-    //syslog(LOG_INFO, "Received I2C deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortA->getPortNumber(), _valuePortA);
+    if(_pDebouncePortA > 0) {
+        _valuePortA = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOA);
+        _pDebouncePortA->update(_valuePortA);
+        //syslog(LOG_INFO, "Received I2C Port-A deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortA->getPortNumber(), _valuePortA);
+    }
+    if(_pDebouncePortB > 0) {
+        _valuePortB = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOB);
+        _pDebouncePortB->update(_valuePortB);
+        //syslog(LOG_INFO, "Received I2C Port-A deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortB->getPortNumber(), _valuePortB);
+    }
+}
+
+bool I2CPortDebounce::isAnyPinHigh() {
+    bool status = false;
+    if(_pDebouncePortA > 0) {
+        if(_pDebouncePortA->isAnyPinHigh()) {
+            status = true;
+        } 
+    }
     
-    _valuePortB = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOB);
-    _pDebouncePortB->update(_valuePortB);
-    //syslog(LOG_INFO, "Received I2C deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortB->getPortNumber(), _valuePortB);
+    if(_pDebouncePortB > 0) {
+        if(_pDebouncePortB->isAnyPinHigh()) {
+            status = true;
+        } 
+    }
+    return status;
 }

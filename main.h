@@ -21,7 +21,8 @@
 #define LOGLEVEL			6
 #define MAC_STRING_LENGTH	13
 
-#define PING_TIME         	60000  // 1 minute
+#define PING_TIME         	60000	// 1 minute
+#define CHECK_PIN_TIME		240000	// 4 minutes	
 
 #define MCP23017_DEVICE1    0x20
 #define MCP23017_DEVICE2    0x21
