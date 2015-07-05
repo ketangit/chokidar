@@ -60,7 +60,7 @@ void setup() {
 
     fd1 = wiringPiI2CSetup(MCP23017_DEVICE1);
     if(fd1 < 0) {
-        fprintf(stderr, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE1);
+        syslog(LOG_CRIT, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE1);
     } else {
         wiringPiI2CWriteReg8(fd1, MCP23017_IODIRA, 0b11111111);  // all input
         wiringPiI2CWriteReg8(fd1, MCP23017_GPPUA,  0b11111111);  // all pull-up
@@ -70,7 +70,7 @@ void setup() {
 
     fd2 = wiringPiI2CSetup(MCP23017_DEVICE2);
     if(fd2 < 0) {
-        fprintf(stderr, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE2);
+        syslog(LOG_CRIT, "Error: unable to initialize MCP23017 device at address %d", MCP23017_DEVICE2);
     } else {
         wiringPiI2CWriteReg8(fd2, MCP23017_IODIRA, 0b11111111);  // all input
         wiringPiI2CWriteReg8(fd2, MCP23017_GPPUA,  0b11111111);  // all pull-up
