@@ -27,13 +27,13 @@ static void callbackDisconnected(struct mosquitto *mosq, void * context, int rea
     _this->resetConnectedState();
 }
 
-MQTTClient::MQTTClient(const char* userName, const char* deviceId, const char* devicePassword, const char* serverName, int serverPort, void (*onMessage)(char*,char*,unsigned int)) {
+MQTTClient::MQTTClient(const char* deviceId, const char* userName, const char* password, const char* serverName, int serverPort, void (*onMessage)(char*,char*,unsigned int)) {
     mosquitto_lib_init();
 
     this->_data = mosquitto_new(deviceId, true, this);
 
     this->_userName = userName;
-    this->_devicePassword = devicePassword;
+    this->_devicePassword = password;
     this->_serverName = serverName;
     this->_serverPort = serverPort;
     this->_authenticatedInServer = false;
@@ -66,6 +66,9 @@ bool MQTTClient::connectIfNecessary() {
     mosquitto_username_pw_set(this->_data, this->_userName, this->_devicePassword);
 
     int result = mosquitto_connect(this->_data, this->_serverName, this->_serverPort, 60);
+    if(result != MOSQ_ERR_SUCCESS) {
+        syslog(LOG_ERR, "Failed to connect: server=%s, port=%s, returnCode=%d\n", this->_serverName, this->_serverPort, result);
+    }    
     this->_authenticatedInServer = result == MOSQ_ERR_SUCCESS;
     return this->_authenticatedInServer;
 }
@@ -87,6 +90,9 @@ bool MQTTClient::publish(const char* topic, const char* payload) {
         return false;
     }
     int result = mosquitto_publish(this->_data, 0, topic, strlen(payload), payload, 0, false);
+    if(result != MOSQ_ERR_SUCCESS) {
+        syslog(LOG_ERR, "Failed to publish: topic=%s, message=%s, returnCode=%d\n", topic, payload, result);
+    }
     return result == MOSQ_ERR_SUCCESS;
 }
 
@@ -99,6 +105,9 @@ bool MQTTClient::subscribe(const char* topic) {
         return false;
     }
     int result = mosquitto_subscribe(this->_data, 0, topic, 0);
+    if(result != MOSQ_ERR_SUCCESS) {
+        syslog(LOG_ERR, "Failed to subscribe: topic=%s, returnCode=%d\n", topic, result);
+    }
     return result == MOSQ_ERR_SUCCESS;
 }
 

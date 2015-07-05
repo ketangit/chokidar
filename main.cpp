@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <syslog.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <linux/if.h>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
-#include <signal.h>
 #include <mqtt_client.h>
 #include <kompex/KompexSQLiteDatabase.h>
 #include <kompex/KompexSQLiteStatement.h>
+
+//Logging level for the syslog
+//Default is INFO-6. Other possible values - ERROR-3, INFO-6, DEBUG-7
+#define LOGLEVEL 6
+#define MAC_STRING_LENGTH 13
 
 #define STATUS_TIME         60000  // 1 minute
 
@@ -25,13 +37,13 @@ char szPinNumber[20];
 
 void setup();
 void loop();
-void ctrlCHandler(int);
-void getPinNumber(int);
+void getPinNumber(int signo);
+void sendMessage(const char* topic, const char* message);
+void recieveMessage(char* topic, char* payload, unsigned int length);    
+void signalHandler(int);
+char *getmac(char *iface);
 
 MQTTClient *mqttClient = 0;
-void sendMessage(const char*, const char*);
-void recieveMessage(char*, char*, unsigned int);
-
 Kompex::SQLiteDatabase *pDatabase = 0;
 Kompex::SQLiteStatement *pStmt = 0;
 
@@ -40,16 +52,21 @@ int main(void) {
     setup();
     loop();
     //printf("Terminating ...\n");
-    sendMessage("SENSOR/CHOKIDAR/STATUS","DISCONNECT");
-    mqttClient->disconnect();
-    mqttClient = 0;
-    pStmt = 0;
-    pDatabase->Close();
-    pDatabase = 0;
 }
 
 void setup() {
-    signal(SIGINT, ctrlCHandler);
+    //setup the syslog logging
+    setlogmask(LOG_UPTO(LOGLEVEL));
+    openlog("chokidar", LOG_PID | LOG_CONS, LOG_USER);
+    syslog(LOG_INFO, "**** Chokidar started ****");
+
+    // register the signal handler for USR1-user defined signal 1
+    if (signal(SIGUSR1, signalHandler) == SIG_ERR) {
+        syslog(LOG_CRIT, "Not able to register the signal handler\n");
+    }
+    if (signal(SIGINT, signalHandler) == SIG_ERR) {
+        syslog(LOG_CRIT, "Not able to register the signal handler\n");
+    }    
 
     // Create SQLite database connection
     pDatabase = new Kompex::SQLiteDatabase("data.db", SQLITE_OPEN_READWRITE, 0);
@@ -57,7 +74,8 @@ void setup() {
     pStmt = new Kompex::SQLiteStatement(pDatabase);
 
     // Create MQTT client for publish/subscribe messages
-    mqttClient = new MQTTClient("", "CHOKIDAR", "", "127.0.0.1", 1883, recieveMessage);
+    char* clientId = getmac("eth0");
+    mqttClient = new MQTTClient(clientId, "", "", "127.0.0.1", 1883, recieveMessage);
     if(!mqttClient->subscribe("SENSOR/CHOKIDAR/COMMAND/#")) {
         fprintf(stderr, "Error: subscribing MQTT messages");
     }
@@ -99,10 +117,10 @@ void loop() {
     unsigned long last_time=0; 
     while (keepRunning == 1) {
         mqttClient->loop();
-	if(millis() - last_time > STATUS_TIME) {
-	    last_time = millis();
-	    sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
-	}
+        if(millis() - last_time > STATUS_TIME) {
+            last_time = millis();
+            sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
+        }
         int val = 0;
         strcpy(szBuffer, "");
         val = wiringPiI2CReadReg8(fd1, MCP23017_GPIOA);
@@ -151,10 +169,6 @@ void loop() {
     }
 }
 
-void ctrlCHandler(int dummy) {
-    keepRunning = 0;
-}
-
 void getPinNumber(int portValue) {
     strcpy(szPinNumber, "");
     if( (portValue ^ 0b10000000) == 0) strcat(szPinNumber, "-7");
@@ -185,3 +199,37 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
     //printf(" rx: Topic=%s, Message=%s\n", topic, message);
 }
 
+// Signal handler to handle when the user tries to kill this process. Try to close down gracefully
+void signalHandler(int signo) {
+    syslog(LOG_INFO, "Received the signal to terminate the chokidar process. \n");
+    syslog(LOG_INFO, "Trying to end the process gracefully. Closing the MQTT & local DB connection. \n");
+    
+    sendMessage("SENSOR/CHOKIDAR/STATUS","DISCONNECT");
+    mqttClient->disconnect();
+    mqttClient = 0;
+    pStmt = 0;
+    pDatabase->Close();
+    pDatabase = 0;
+
+    syslog(LOG_INFO, "Shutdown of the chokidar process is complete. \n");
+    syslog(LOG_INFO, "**** Chokidar has ended ****");
+    closelog();
+    exit(1);
+}
+
+char* getmac(char *iface) {
+    char *ret = malloc(MAC_STRING_LENGTH);
+    struct ifreq s;
+    int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    strcpy(s.ifr_name, iface);
+    if (fd >= 0 && ret && 0 == ioctl(fd, SIOCGIFHWADDR, &s)) {
+        int i;
+        for (i = 0; i < 6; ++i) {
+            snprintf(ret+i*2,MAC_STRING_LENGTH-i*2,"%02x",(unsigned char) s.ifr_addr.sa_data[i]);
+        }
+    } else {
+        perror("malloc/socket/ioctl failed");
+        exit(1);
+    }
+    return(ret);
+}

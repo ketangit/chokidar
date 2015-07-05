@@ -15,7 +15,7 @@ private:
     bool connectIfNecessary();
 
 public:
-    MQTTClient(const char * userName, const char * deviceId, const char * devicePassword, const char * serverName, int serverPort, void (*callback)(char*,char*,unsigned int));
+    MQTTClient(const char * deviceId, const char * userName, const char * password, const char * serverName, int serverPort, void (*callback)(char*,char*,unsigned int));
     ~MQTTClient();
     bool publish(const char * topic, const char * payload);
     bool subscribe(const char * topic);
