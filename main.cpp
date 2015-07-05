@@ -10,28 +10,26 @@ void loop();
 void getPinNumber(int signo);
 void sendMessage(const char* topic, const char* message);
 void recieveMessage(char* topic, char* payload, unsigned int length);    
-void pingMQTTMessage(void *context);
+void pingMQTTMessage();
 void signalHandler(int);
 
-Timer *timer = 0;
+Timer *pTimer = 0;
 MQTTClient *mqttClient = 0;
 Kompex::SQLiteDatabase *pDatabase = 0;
 Kompex::SQLiteStatement *pStmt = 0;
 
 int main(void) {
-    //printf("Starting up ...\n");
     setup();
     loop();
-    //printf("Terminating ...\n");
 }
 
 void setup() {
-    //setup the syslog logging
+    // Setup the syslog logging
     setlogmask(LOG_UPTO(LOGLEVEL));
     openlog("chokidar", LOG_PID | LOG_CONS, LOG_USER);
     syslog(LOG_INFO, "**** Chokidar started ****");
 
-    // register the signal handler for USR1-user defined signal 1
+    // Register the signal handler for USR1-user defined signal 1
     if (signal(SIGUSR1, signalHandler) == SIG_ERR) {
         syslog(LOG_CRIT, "Not able to register the signal handler\n");
     }
@@ -47,7 +45,7 @@ void setup() {
     // Create MQTT client for publish/subscribe messages
     mqttClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
     if(!mqttClient->subscribe("SENSOR/CHOKIDAR/COMMAND/#")) {
-        fprintf(stderr, "Error: subscribing MQTT messages");
+        syslog(LOG_CRIT, "Error: subscribing MQTT messages\n");
     }
     sendMessage("SENSOR/CHOKIDAR/STATUS","STARTED");
 
@@ -80,20 +78,17 @@ void setup() {
         wiringPiI2CWriteReg8(fd2, MCP23017_GPPUB,  0b11111111);  // all pull-up
     }
     
-    timer = new Timer();
-    timer.every(PING_TIME, pingMQTTMessage, (void*)0);
+    pTimer = new Timer();
+    pTimer->every(PING_TIME, pingMQTTMessage);
 }
 
 void loop() {
     char szBuffer[50];
     char szTmp[20];
-    //unsigned long last_time=0; 
     while (keepRunning == 1) {
         mqttClient->loop();
-        /*if(millis() - last_time > STATUS_TIME) {
-            last_time = millis();
-            sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
-        }*/
+        pTimer->update();
+
         int val = 0;
         strcpy(szBuffer, "");
         val = wiringPiI2CReadReg8(fd1, MCP23017_GPIOA);
@@ -136,7 +131,6 @@ void loop() {
         delay(50);
 
         if(strlen(szBuffer) != 0) {
-            //printf(" tx: %s\n", szBuffer);
             sendMessage("SENSOR/CHOKIDAR/PORTS",szBuffer);
         }
     }
@@ -160,7 +154,7 @@ void getPinNumber(int portValue) {
 // send MQTT message
 void sendMessage(const char* topic, const char* message) {
     if(!mqttClient->publish(topic,message)) {
-        fprintf(stderr, "Error: publishing MQTT message %s", message);
+        syslog(LOG_CRIT, "Error: publishing MQTT message %s\n", message);
     }
 }
 
@@ -169,10 +163,10 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
     char* message = new char[length + 1];
     memset(message, 0, length + 1);
     memcpy(message, payload, length);
-    //printf(" rx: Topic=%s, Message=%s\n", topic, message);
+    syslog(LOG_INFO, "Recevied: Topic=%s, Message=%s\n", topic, message);
 }
 
-void pingMQTTMessage(void *context) {
+void pingMQTTMessage() {
     sendMessage("SENSOR/CHOKIDAR/STATUS","ACTIVE");
 }
 
@@ -184,6 +178,7 @@ void signalHandler(int signo) {
     sendMessage("SENSOR/CHOKIDAR/STATUS","DISCONNECT");
     mqttClient->disconnect();
     mqttClient = 0;
+    pTimer = 0;
     pStmt = 0;
     pDatabase->Close();
     pDatabase = 0;

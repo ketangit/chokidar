@@ -13,6 +13,7 @@
 #include <kompex/KompexSQLiteStatement.h>
 
 #include "mqtt_client.h"
+#include "Timer.h"
 
 //Logging level for the syslog
 //Default is INFO-6. Other possible values - ERROR-3, INFO-6, DEBUG-7
