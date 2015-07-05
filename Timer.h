@@ -6,6 +6,7 @@
 #include "Event.h"
 
 // Original Source: https://github.com/JChristensen/Timer
+// Modfied to work with Raspberry PI
 
 #define MAX_NUMBER_OF_EVENTS (10)
 

@@ -5,6 +5,7 @@
 #include <wiringPi.h>
 
 // Original Source: https://github.com/JChristensen/Timer
+// Modfied to work with Raspberry PI
 
 #define EVENT_NONE 0
 #define EVENT_EVERY 1

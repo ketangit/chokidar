@@ -5,6 +5,7 @@
 #include <wiringPi.h>
 
 // Original Source: // https://github.com/arnebech/Debounce
+// Modfied to work with Raspberry PI
 
 // Number of inputs we can monitor per port
 #define DEBOUNCE_MAX_CAPACITY 8
@@ -19,34 +20,30 @@
 #define DEBOUNCE_SETTINGS_FAST_CALLBACK 0x08
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
-#define bitSet(value, bit) ((value) |= (1UL << (bit)))
-#define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
-#define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
+//#define bitSet(value, bit) ((value) |= (1UL << (bit)))
+//#define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+//#define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 
 class Debounce {
+    
 public:
-	Debounce();
-	void setPort(char, void(*func)(bool, uint8_t, char*));
-	void setBounceDelay(uint16_t);
-	void update(uint8_t value);
-	unsigned long millis();
-
+    Debounce(char portName, void(*func)(bool, uint8_t, char *portName));
+    bool update(uint8_t value);
+    
 private:
-	typedef struct config_struct {
-		uint8_t pin;
-		void(*func)(bool, uint8_t, char*);
-		uint8_t state;
-		uint8_t transientState;
-		unsigned long lastChangeTime;
-		uint8_t settings;
-	} switch_info_t;
-	switch_info_t switches[DEBOUNCE_MAX_CAPACITY];
-	uint8_t configuredSwitchesNum;
-	uint16_t bounceDelay;
-	char portName;
-	
-	uint8_t addInput(uint8_t pin, void(*func)(bool, uint8_t, char*));
-	uint8_t addInput(uint8_t pin, void(*func)(bool, uint8_t, char*), uint8_t settings);
+    typedef struct config_struct {
+        uint8_t pin;
+        void(*func)(bool, uint8_t, char*);
+        uint8_t state;
+        uint8_t transientState;
+        unsigned long lastChangeTime;
+        uint8_t settings;
+        
+    } switch_info_t;
+    switch_info_t switches[DEBOUNCE_MAX_CAPACITY];
+    uint8_t configuredSwitchesNum;
+    uint16_t bounceDelay;
+    char portName;
 };
 
 #endif // DEBOUNCE_H

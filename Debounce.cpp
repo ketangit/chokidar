@@ -1,40 +1,19 @@
 #include "Debounce.h"
 
-Debounce::Debounce() {
+Debounce::Debounce(char portName, void(*func)(bool, uint8_t, char *portName)) {
 	this->configuredSwitchesNum = 0;
 	this->bounceDelay = DEBOUNCE_DEFAULT_DELAY;
-	this->portName = 'Z';
-}
-
-void Debounce::setPort(char portName, void(*func)(bool, uint8_t, char *portName)) {
 	this->portName = portName;
 	for (uint8_t pin = 0; pin < DEBOUNCE_MAX_CAPACITY; pin++) {
-		addInput(pin, func);
-	}
-}
-
-void Debounce::setBounceDelay(uint16_t delay) {
-	this->bounceDelay = delay;
-}
-
-uint8_t Debounce::addInput(uint8_t pin, void(*func)(bool, uint8_t, char *port)) {
-	return this->addInput(pin, func, DEBOUNCE_SETTING_NORMAL);
-}
-
-uint8_t Debounce::addInput(uint8_t pin, void(*func)(bool, uint8_t, char *port), uint8_t settings) {
-	if (this->configuredSwitchesNum >= DEBOUNCE_MAX_CAPACITY) {
-		return -1;
-	}
-	//pinMode(pin, mode);		// not used here
-	switch_info_t *info = &this->switches[this->configuredSwitchesNum];
-	info->pin = pin;
-	info->func = func;
-	info->state = false;		// initial state of pin is LOW by default  digitalRead(pin);
-	info->transientState = info->state;
-	info->lastChangeTime = 0;
-	info->settings = settings;
-	this->configuredSwitchesNum++;
-	return this->configuredSwitchesNum;
+		switch_info_t *info = &this->switches[this->configuredSwitchesNum];
+		info->pin = pin;
+		info->func = func;
+		info->state = false;		// initial state of pin is LOW by default  digitalRead(pin);
+		info->transientState = info->state;
+		info->lastChangeTime = 0;
+		info->settings = settings;
+		this->configuredSwitchesNum++;
+	}	
 }
 
 void Debounce::update(uint8_t value) {
@@ -77,7 +56,6 @@ void Debounce::update(uint8_t value) {
 				}
 			}
 		}
-
 		if (measuredState != info->transientState) {
 			info->transientState = measuredState;
 			info->lastChangeTime = currentTime;
