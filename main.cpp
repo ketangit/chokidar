@@ -32,7 +32,7 @@ void setup() {
     }
     if (signal(SIGINT, signalHandler) == SIG_ERR) {
         syslog(LOG_CRIT, "Not able to register the signal handler\n");
-    }    
+    }
 
     // Create MQTT client for publish/subscribe messages
     pMQTTClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
@@ -58,7 +58,7 @@ void setup() {
     
     pTimer = new Timer();
     pTimer->every(PING_TIME, callbackDeviceStatus);
-    //pTimer->every(CHECK_PIN_TIME, callbackPinHigh);
+    pTimer->every(CHECK_PIN_TIME, callbackPinHigh);
 }
 
 void loop() {
