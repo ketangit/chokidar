@@ -1,17 +1,17 @@
 mqtt-broker:
 ============
-  sudo /etc/init.d/mosquitto start
-  sudo /etc/init.d/mosquitto stop
+  sudo service mosquitto start
+  sudo service mosquitto stop
 
 node-red:
 =========
-  sudo /etc/init.d/node-red start
-  sudo /etc/init.d/node-red stop
+  sudo service node-red start
+  sudo service node-red stop
 
-chokidar:
-=========
-  sudo /etc/init.d/choki-dar start
-  sudo /etc/init.d/choki-dar stop
+chokidard:
+==========
+  sudo service chokidard start
+  sudo service chokidard stop
 
 Update mosquitto conf file
 ==========================
@@ -24,14 +24,6 @@ sudo vi /etc/mosquitto/mosquitto.conf
 
   listener 9001 127.0.0.1
   protocol websockets
-  
-Config init.d script for choki-dar
-==================================
-sudo touch /var/log/choki-dar.log
-sudo chown ${USER} /var/log/choki-dar.log
-sudo cp ~/chokidar/setup/choki-dar /etc/init.d/.
-sudo chmod +x /etc/init.d/choki-dar
-sudo update-rc.d choki-dar defaults
 
 Config init.d script for node-js
 ================================
@@ -42,10 +34,26 @@ sudo cp /tmp/node-red /etc/init.d/.
 sudo chmod +x /etc/init.d/node-red
 sudo update-rc.d node-red defaults
 
-
 git commands
 ============
 git commit -am "update comment"
 git push
 git status
 git pull
+
+
+Prepare Environment
+===================
+sudo apt-get install devscripts
+
+Build Package
+=============
+dpkg-buildpackage -uc -us
+
+Install Package
+===============
+sudo dpkg -i chokidard_0.0.1_armhf.deb
+
+Uninstall Package
+=================
+sudo dpkg -P chokidard
