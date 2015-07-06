@@ -1,0 +1,12 @@
+Source: chokidard  
+Section: utils
+Priority: extra
+Maintainer: Ketan Patel <ketan@eclipsemicro.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.3
+Homepage: https://github.com/ketangit/chokidar
+
+Package: chokidard
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}  
+Description: Home Automation daemon
