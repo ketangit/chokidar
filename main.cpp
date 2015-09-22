@@ -8,7 +8,9 @@ void callbackDeviceStatus();
 void callbackPinHigh();
 void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber);
 void signalHandler(int);
+time_t datetimeNow();
 
+const char* deviceName = "CHOKIDAR";
 char szBuffer[100];
 Timer *pTimer = 0;
 MQTTClient *pMQTTClient = 0;
@@ -23,8 +25,9 @@ int main(void) {
 void setup() {
     // Setup the syslog logging
     setlogmask(LOG_UPTO(LOGLEVEL));
-    openlog("chokidar", LOG_PID | LOG_CONS, LOG_USER);
-    syslog(LOG_INFO, "**** Chokidar started ****");
+    openlog(deviceName, LOG_PID | LOG_CONS, LOG_USER);
+    sprintf(szBuffer, "**** %s started ****", deviceName);
+    syslog(LOG_INFO, szBuffer);
 
     // Register the signal handler for USR1-user defined signal 1
     if (signal(SIGUSR1, signalHandler) == SIG_ERR) {
@@ -35,11 +38,13 @@ void setup() {
     }
 
     // Create MQTT client for publish/subscribe messages
-    pMQTTClient = new MQTTClient("chokidar", "", "", "127.0.0.1", 1883, recieveMessage);
-    if(!pMQTTClient->subscribe("SENSOR/CHOKIDAR/COMMAND/#")) {
+    pMQTTClient = new MQTTClient(deviceName, "", "", "127.0.0.1", 1883, recieveMessage);
+    sprintf(szBuffer, "SENSOR/%s/COMMAND", deviceName);
+    if(!pMQTTClient->subscribe(szBuffer)) {
         syslog(LOG_CRIT, "Error: subscribing MQTT messages\n");
     }
-    sendMessage("SENSOR/CHOKIDAR/STATUS", "STARTED");
+    sprintf(szBuffer, "{\"id\":\"%s\",\"state\":\"%s\",\"datetime\":\"%ld\"}", deviceName, "STARTED", datetimeNow());
+    sendMessage("SENSOR/STATUS", szBuffer);
 
     // Initialize wiringPi using wiringPi pins
     wiringPiSetup();
@@ -63,7 +68,7 @@ void setup() {
 
 void loop() {
     while (1) {
-        pMQTTClient->loop();
+        //pMQTTClient->loop();
         pTimer->update();
         pDevice1->update();
         pDevice2->update();
@@ -86,7 +91,8 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
 }
 
 void callbackDeviceStatus() {
-    sendMessage("SENSOR/CHOKIDAR/STATUS", "ACTIVE");
+    sprintf(szBuffer, "{\"id\":\"%s\",\"state\":\"%s\",\"datetime\":\"%ld\"}", deviceName, "ACTIVE", datetimeNow());
+    sendMessage("SENSOR/STATUS", szBuffer);
 }
 
 void callbackPinHigh() {
@@ -100,25 +106,29 @@ void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber) {
     if(portNumber < 4 && state == true) {
         sendMessage("SENSOR/ALERT", "AMBER");
     }
-    time_t t = time(NULL);
-    sprintf(szBuffer, "{\"a\":{\"port\":\"%u\",\"pin\":\"%u\",\"state\":\"%s\",\"datetime\":\"%ld\"}}", portNumber, pin, (state ? "H" : "L"), t);
-    sendMessage("SENSOR/CHOKIDAR/PORTS", szBuffer);
+    sprintf(szBuffer, "{\"id\":\"%u%u\",\"state\":\"%s\",\"datetime\":\"%ld\"}", portNumber, pin, (state ? "H" : "L"), datetimeNow());
+    sendMessage("SENSOR/PORTS", szBuffer);
 }
 
 // Signal handler to handle when the user tries to kill this process. Try to close down gracefully
 void signalHandler(int signo) {
-    syslog(LOG_INFO, "Received the signal to terminate the chokidar process. \n");
     syslog(LOG_INFO, "Trying to end the process gracefully. Closing the MQTT connection. \n");
-    
-    sendMessage("SENSOR/CHOKIDAR/STATUS", "DISCONNECT");
+    sprintf(szBuffer, "{\"id\":\"%s\",\"state\":\"%s\",\"datetime\":\"%ld\"}", deviceName, "DISCONNECT", datetimeNow());
+    sendMessage("SENSOR/STATUS", szBuffer);
     pMQTTClient->disconnect();
     pMQTTClient = 0;
     pTimer = 0;
     pDevice1 = 0;
     pDevice2 = 0;
 
-    syslog(LOG_INFO, "Shutdown of the chokidar process is complete. \n");
-    syslog(LOG_INFO, "**** Chokidar has ended ****");
+    sprintf(szBuffer, "**** %s has ended ****", deviceName);
+    syslog(LOG_INFO, szBuffer);
     closelog();
     exit(1);
+}
+
+time_t datetimeNow() {
+    time_t t = time(NULL);
+    struct tm* now = localtime(&t);
+    return mktime(now);
 }
