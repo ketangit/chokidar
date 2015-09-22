@@ -6,15 +6,14 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Chokidar service
-# Description:       Chokidar service used to publish the events from
-#		from Raspberry Pi to the cloud service
+# Description:       Chokidar service publish MQTT events from various home sensors 
 ### END INIT INFO
 
 # Do NOT "set -e"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="This service is used to publish events from the Raspberry Pi to the cloud"
+DESC="This service is used to publish MQTT events from the Raspberry Pi"
 NAME=chokidard
 DAEMON=/opt/chokidard/$NAME
 PIDFILE=/opt/.$NAME.pid
