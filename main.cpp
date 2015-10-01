@@ -17,6 +17,8 @@ MQTTClient *pMQTTClient = 0;
 I2CPortDebounce *pDevice1 = 0;
 I2CPortDebounce *pDevice2 = 0;
 
+int BUZZER = 3;	// GPIO3, pin=22
+
 int main(void) {
     setup();
     loop();
@@ -64,6 +66,7 @@ void setup() {
     pTimer = new Timer();
     pTimer->every(PING_TIME, callbackDeviceStatus);
     pTimer->every(CHECK_PIN_TIME, callbackPinHigh);
+    pTimer->oscillate(BUZZER, 350, HIGH, 3);        // 350 milli-seconds
 }
 
 void loop() {
@@ -104,14 +107,19 @@ void callbackDeviceStatus() {
 
 void callbackPinHigh() {
     if(pDevice1->isAnyPinHigh() || pDevice2->isAnyPinHigh()) {
-        sendMessage("SENSOR/ALERT", "YELLOW");
+        syslog(LOG_INFO, "device1 or device2 pins are ON\n");
+	pTimer->oscillate(BUZZER, 350, HIGH, 2); 	// 350 milli-seconds
+        sprintf(szBuffer, "SENSOR/%s/ALERT", deviceName);
+        sendMessage(szBuffer, "YELLOW");
     }
 }
 
 void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber) {
     syslog(LOG_INFO, "I2C ports changed: port=%u, pin=%u, state=%s\n", portNumber, pin, (state ? "ON" : "OFF"));
     if(portNumber < 4 && state == true) {
-        sendMessage("SENSOR/ALERT", "AMBER");
+	pTimer->pulseImmediate(BUZZER, 2000, LOW);	// 2000 milli-seconds
+	sprintf(szBuffer, "SENSOR/%s/ALERT", deviceName);
+        sendMessage(szBuffer, "AMBER");
     }
     sprintf(szBuffer, "SENSOR/%s/PORT/%u%u", deviceName, portNumber, pin);
     sprintf(szState, "%s", (state ? "ON" : "OFF"));
