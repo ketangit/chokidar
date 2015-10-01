@@ -28,6 +28,7 @@ class PortDebounce {
 public:
     PortDebounce(uint8_t portNumber, void(*func)(bool, uint8_t, uint8_t));
     void update(uint8_t value);
+    void report(uint8_t value);
     uint8_t getPortNumber();
     bool isAnyPinHigh();
     

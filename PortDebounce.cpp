@@ -75,3 +75,14 @@ void PortDebounce::update(uint8_t value) {
 		}
 	}
 }
+
+void PortDebounce::report(uint8_t value) {
+	uint8_t measuredState;
+	switch_info_t *info;
+
+	for (uint8_t i = 0; i < this->configuredSwitchesNum; i++) {
+		info = &this->switches[i];
+		measuredState = bitRead(value, info->pin);    // digitalRead(info->pin);
+		info->func(measuredState, info->pin, this->portNumber);
+	}
+}

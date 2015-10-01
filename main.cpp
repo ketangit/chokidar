@@ -8,10 +8,10 @@ void callbackDeviceStatus();
 void callbackPinHigh();
 void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber);
 void signalHandler(int);
-time_t datetimeNow();
 
 const char* deviceName = "CHOKIDAR";
 char szBuffer[100];
+char szState[5];
 Timer *pTimer = 0;
 MQTTClient *pMQTTClient = 0;
 I2CPortDebounce *pDevice1 = 0;
@@ -43,8 +43,8 @@ void setup() {
     if(!pMQTTClient->subscribe(szBuffer)) {
         syslog(LOG_CRIT, "Error: subscribing MQTT messages\n");
     }
-    sprintf(szBuffer, "{\"id\":\"%s\",\"state\":\"%s\",\"datetime\":\"%ld\"}", deviceName, "STARTED", datetimeNow());
-    sendMessage("SENSOR/STATUS", szBuffer);
+    sprintf(szBuffer, "SENSOR/%s/STATUS", deviceName);
+    sendMessage(szBuffer, "STARTED");
 
     // Initialize wiringPi using wiringPi pins
     wiringPiSetup();
@@ -87,12 +87,19 @@ void recieveMessage(char* topic, char* payload, unsigned int length) {
     char* message = new char[length + 1];
     memset(message, 0, length + 1);
     memcpy(message, payload, length);
+    sprintf(szBuffer, "SENSOR/%s/COMMAND", deviceName);
+    if (strcmp(topic, szBuffer)==0) {
+      if (message == "REPORT") {
+        pDevice1->report();
+        pDevice2->report(); 
+      }
+    }
     syslog(LOG_INFO, "Recevied: Topic=%s, Message=%s\n", topic, message);
 }
 
 void callbackDeviceStatus() {
-    sprintf(szBuffer, "{\"id\":\"%s\",\"state\":\"%s\",\"datetime\":\"%ld\"}", deviceName, "ACTIVE", datetimeNow());
-    sendMessage("SENSOR/STATUS", szBuffer);
+    sprintf(szBuffer, "SENSOR/%s/STATUS", deviceName);
+    sendMessage(szBuffer, "ACTIVE");
 }
 
 void callbackPinHigh() {
@@ -102,19 +109,20 @@ void callbackPinHigh() {
 }
 
 void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber) {
-    syslog(LOG_INFO, "I2C ports changed: port=%u, pin=%u, state=%s\n", portNumber, pin, (state ? "H" : "L"));
+    syslog(LOG_INFO, "I2C ports changed: port=%u, pin=%u, state=%s\n", portNumber, pin, (state ? "ON" : "OFF"));
     if(portNumber < 4 && state == true) {
         sendMessage("SENSOR/ALERT", "AMBER");
     }
-    sprintf(szBuffer, "{\"id\":\"%u%u\",\"state\":\"%s\",\"datetime\":\"%ld\"}", portNumber, pin, (state ? "H" : "L"), datetimeNow());
-    sendMessage("SENSOR/PORTS", szBuffer);
+    sprintf(szBuffer, "SENSOR/%s/PORT/%u%u", deviceName, portNumber, pin);
+    sprintf(szState, "%s", (state ? "ON" : "OFF"));
+    sendMessage(szBuffer, szState);
 }
 
 // Signal handler to handle when the user tries to kill this process. Try to close down gracefully
 void signalHandler(int signo) {
     syslog(LOG_INFO, "Trying to end the process gracefully. Closing the MQTT connection. \n");
-    sprintf(szBuffer, "{\"id\":\"%s\",\"state\":\"%s\",\"datetime\":\"%ld\"}", deviceName, "DISCONNECT", datetimeNow());
-    sendMessage("SENSOR/STATUS", szBuffer);
+    sprintf(szBuffer, "SENSOR/%s/STATUS", deviceName);
+    sendMessage(szBuffer, "DISCONNECT");
     pMQTTClient->disconnect();
     pMQTTClient = 0;
     pTimer = 0;
@@ -127,8 +135,3 @@ void signalHandler(int signo) {
     exit(1);
 }
 
-time_t datetimeNow() {
-    time_t t = time(NULL);
-    struct tm* now = localtime(&t);
-    return mktime(now);
-}

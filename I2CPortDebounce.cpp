@@ -48,6 +48,19 @@ void I2CPortDebounce::update(void) {
     }
 }
 
+void I2CPortDebounce::report(void) {
+    if(_pDebouncePortA > 0) {
+        _valuePortA = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOA);
+        _pDebouncePortA->report(_valuePortA);
+        //syslog(LOG_INFO, "Received I2C Port-A deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortA->getPortNumber(), _valuePortA);
+    }
+    if(_pDebouncePortB > 0) {
+        _valuePortB = wiringPiI2CReadReg8(_fileHandle, MCP23017_GPIOB);
+        _pDebouncePortB->report(_valuePortB);
+        //syslog(LOG_INFO, "Received I2C Port-A deviceId=%d, portNumber=%u, portValue=%u\n", _deviceId, _pDebouncePortB->getPortNumber(), _valuePortB);
+    }
+}
+
 bool I2CPortDebounce::isAnyPinHigh() {
     bool status = false;
     if(_pDebouncePortA > 0) {

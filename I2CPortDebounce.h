@@ -19,6 +19,7 @@ public:
   I2CPortDebounce();
   void init(int devId, uint8_t portNumberA, uint8_t portNumberB, void(*func)(bool, uint8_t, uint8_t));
   void update(void);
+  void report(void);
   bool isAnyPinHigh();
   
   private:
