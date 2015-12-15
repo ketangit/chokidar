@@ -122,7 +122,7 @@ void callbackPinStateChanged(bool state, uint8_t pin, uint8_t portNumber) {
         sendMessage(szBuffer, "AMBER");
     }
     sprintf(szBuffer, "SENSOR/%s/PORT/%u%u", deviceName, portNumber, pin);
-    sprintf(szState, "%s", (state ? "ON" : "OFF"));
+    sprintf(szState, "%s", (state ? "Open" : "Close"));
     sendMessage(szBuffer, szState);
 }
 
